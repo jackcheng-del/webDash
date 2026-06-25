@@ -647,7 +647,7 @@ export default function App() {
       </header>
 
       {/* Main grid */}
-      <div className="flex-1 grid overflow-hidden" style={{ gridTemplateColumns: "clamp(140px, 18vw, 380px) 1fr clamp(140px, 18vw, 380px)" }}>
+      <div className="flex-1 grid overflow-hidden" style={{ gridTemplateColumns: "clamp(140px, 18vw, 380px) 1fr clamp(140px, 18vw, 380px)", paddingBottom: "clamp(100px, 20vh, 380px)" }}>
 
         {/* Left: both sat panels */}
         <SatSidebar livePositions={livePositions} />
