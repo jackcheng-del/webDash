@@ -17,10 +17,7 @@ function figmaAssetResolver() {
 }
 
 export default defineConfig({
-  // For GitHub Pages project sites the app is served from /<repo>/.
-  // Set BASE_PATH at build time (the GitHub Actions workflow does this).
-  // Defaults to '/' so Netlify/Vercel/local builds work unchanged.
-  base: process.env.BASE_PATH || '/',
+  base: process.env.BASE_PATH ?? '/webDash/',
   plugins: [
     figmaAssetResolver(),
     // The React and Tailwind plugins are both required for Make, even if

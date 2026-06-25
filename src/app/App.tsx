@@ -305,7 +305,7 @@ function OrbitalMap({ onPositions, requests }: { onPositions: (p: { id: string; 
   });
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full" preserveAspectRatio="none">
       <defs>
         <filter id="glow-cyan" x="-60%" y="-60%" width="220%" height="220%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
@@ -387,41 +387,44 @@ function OrbitalMap({ onPositions, requests }: { onPositions: (p: { id: string; 
 
 function SatSidebar({ livePositions }: { livePositions: { id: string; lat: number; lon: number }[] }) {
   return (
-    <aside className="border-r border-border flex flex-col overflow-hidden" style={{ paddingTop: 300 }}>
+    <aside className="border-r border-border flex flex-col overflow-hidden" style={{ paddingTop: "clamp(60px, 12vw, 220px)" }}>
       {SAT_CONFIG.map((s, idx) => {
-        const pos  = livePositions.find(p => p.id === s.id);
-
+        const pos = livePositions.find(p => p.id === s.id);
         return (
           <div key={s.id} className={`flex-1 flex flex-col overflow-hidden ${idx === 0 ? "border-b border-border" : ""}`}
             style={{ background: `${s.color}05` }}>
 
             {/* Header */}
-            <div className="flex-none px-4 py-3 flex items-center justify-between border-b border-border/50"
-              style={{ borderLeft: `3px solid ${s.color}` }}>
-              <div className="flex items-center gap-3">
-                <span className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: s.color }} />
-                <span className="font-semibold text-2xl tracking-wider" style={{ color: s.color }}>{s.name}</span>
+            <div className="flex-none flex items-center justify-between border-b"
+              style={{ padding: "clamp(6px,1.2vh,14px) clamp(8px,1.2vw,20px)", borderLeft: `3px solid ${s.color}`, borderColor: `${s.color}30` }}>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full animate-pulse flex-none"
+                  style={{ width: "clamp(8px,1vw,14px)", height: "clamp(8px,1vw,14px)", backgroundColor: s.color }} />
+                <span className="font-semibold tracking-wider truncate"
+                  style={{ color: s.color, fontSize: "clamp(0.9rem,1.6vw,1.6rem)" }}>{s.name}</span>
               </div>
-              <span className="font-mono text-xs px-2 py-0.5 border tracking-widest"
-                style={{ color: s.color, borderColor: `${s.color}40` }}>NOMINAL</span>
+              <span className="font-mono border tracking-widest flex-none"
+                style={{ color: s.color, borderColor: `${s.color}40`, fontSize: "clamp(0.55rem,0.7vw,0.8rem)", padding: "2px clamp(4px,0.5vw,10px)" }}>
+                NOMINAL
+              </span>
             </div>
 
             {/* Live position */}
-            <div className="flex-none px-4 py-3 border-b border-border/30 grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-[10px] block mb-1">Latitude</Label>
-                <span className="font-mono text-3xl leading-none" style={{ color: s.color }}>
-                  {pos ? `${pos.lat.toFixed(2)}°` : "—"}
-                </span>
-              </div>
-              <div>
-                <Label className="text-[10px] block mb-1">Longitude</Label>
-                <span className="font-mono text-3xl leading-none" style={{ color: s.color }}>
-                  {pos ? `${pos.lon.toFixed(2)}°` : "—"}
-                </span>
-              </div>
+            <div className="flex-none border-b grid grid-cols-2"
+              style={{ padding: "clamp(6px,1vh,14px) clamp(8px,1.2vw,20px)", gap: "clamp(6px,1vw,16px)", borderColor: "rgba(0,212,255,0.1)" }}>
+              {[["Latitude", pos ? `${pos.lat.toFixed(2)}°` : "—"], ["Longitude", pos ? `${pos.lon.toFixed(2)}°` : "—"]].map(([label, val]) => (
+                <div key={label}>
+                  <span className="block text-muted-foreground font-mono uppercase tracking-widest"
+                    style={{ fontSize: "clamp(0.5rem,0.7vw,0.75rem)", marginBottom: "clamp(2px,0.3vh,6px)" }}>{label}</span>
+                  <span className="font-mono leading-none"
+                    style={{ color: s.color, fontSize: "clamp(1rem,2.2vw,2.4rem)" }}>{val}</span>
+                </div>
+              ))}
             </div>
-            <div className="flex-1 px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-4 content-start">
+
+            {/* Orbital metrics */}
+            <div className="flex-1 grid grid-cols-2 content-start"
+              style={{ padding: "clamp(6px,1vh,14px) clamp(8px,1.2vw,20px)", gap: "clamp(6px,1.2vh,20px) clamp(6px,1vw,16px)" }}>
               {(s.id === "001" ? [
                 { l: "Altitude",    v: "530",    u: "km"   },
                 { l: "Inclination", v: "97.516", u: "°"    },
@@ -436,10 +439,13 @@ function SatSidebar({ livePositions }: { livePositions: { id: string; lat: numbe
                 { l: "Velocity",    v: "7.613", u: "km/s" },
               ]).map(({ l, v, u }) => (
                 <div key={l}>
-                  <Label className="text-[10px] block mb-1">{l}</Label>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="font-mono text-3xl leading-none" style={{ color: s.color }}>{v}</span>
-                    {u && <Label className="text-xs">{u}</Label>}
+                  <span className="block text-muted-foreground font-mono uppercase tracking-widest"
+                    style={{ fontSize: "clamp(0.5rem,0.7vw,0.75rem)", marginBottom: "clamp(2px,0.3vh,6px)" }}>{l}</span>
+                  <div className="flex items-baseline" style={{ gap: "clamp(2px,0.3vw,6px)" }}>
+                    <span className="font-mono leading-none"
+                      style={{ color: s.color, fontSize: "clamp(1rem,2.2vw,2.4rem)" }}>{v}</span>
+                    {u && <span className="text-muted-foreground font-mono uppercase tracking-widest"
+                      style={{ fontSize: "clamp(0.5rem,0.6vw,0.7rem)" }}>{u}</span>}
                   </div>
                 </div>
               ))}
@@ -480,11 +486,15 @@ function CustomerPanel({ livePositions, requests }: { livePositions: { id: strin
     return inRange ? "ACTIVE" : c.status;
   }
 
+  const fs = { label: "clamp(0.5rem,0.7vw,0.8rem)", value: "clamp(0.85rem,1.5vw,1.5rem)", large: "clamp(1rem,1.8vw,2rem)" };
+  const pad = { x: "clamp(8px,1.2vw,20px)", y: "clamp(6px,1vh,14px)" };
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-      <div className="flex-none px-4 py-3 border-b border-border flex items-center justify-between">
-        <Label>Illumination Service Requests</Label>
-        <span className="font-mono text-xs text-primary">{requests.filter(r => liveStatus(r) === "ACTIVE").length} ACTIVE</span>
+      <div className="flex-none border-b border-border flex items-center justify-between"
+        style={{ padding: `${pad.y} ${pad.x}` }}>
+        <span className="font-mono uppercase tracking-widest text-muted-foreground" style={{ fontSize: fs.label }}>Illumination Service Requests</span>
+        <span className="font-mono text-primary" style={{ fontSize: fs.label }}>{requests.filter(r => liveStatus(r) === "ACTIVE").length} ACTIVE</span>
       </div>
 
       {/* Request list */}
@@ -493,24 +503,23 @@ function CustomerPanel({ livePositions, requests }: { livePositions: { id: strin
           const status = liveStatus(r);
           return (
           <button key={r.id} onClick={() => setSelected(r.id)}
-            className="w-full text-left px-4 transition-all"
+            className="w-full text-left transition-all"
             style={{
-              paddingTop: 40, paddingBottom: 40,
+              padding: `clamp(12px,2vh,32px) ${pad.x}`,
               background: selected === r.id ? `${STATUS_COLOR[status]}0A` : "transparent",
               borderLeft: selected === r.id ? `3px solid ${STATUS_COLOR[status]}` : "3px solid transparent",
               borderBottom: "1px solid rgba(0,212,255,0.1)",
             }}>
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <span className="font-semibold tracking-wide leading-snug" style={{ fontSize: 20 }}>{r.customer}</span>
-              <span className="font-mono text-sm px-1.5 flex-none inline-flex items-center"
-                style={{ height: 20, color: STATUS_COLOR[status], border: `1px solid ${STATUS_COLOR[status]}40` }}>
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <span className="font-semibold tracking-wide leading-snug" style={{ fontSize: fs.large }}>{r.customer}</span>
+              <span className="font-mono flex-none inline-flex items-center border"
+                style={{ fontSize: fs.label, color: STATUS_COLOR[status], borderColor: `${STATUS_COLOR[status]}40`, padding: "2px 6px" }}>
                 {status}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <Label className="text-xs">{r.id} · {r.type}</Label>
-              <span className="font-mono text-xs px-1 py-px"
-                style={{ color: PRIORITY_COLOR[r.priority] }}>{r.priority}</span>
+              <span className="font-mono uppercase tracking-widest text-muted-foreground" style={{ fontSize: fs.label }}>{r.id} · {r.type}</span>
+              <span className="font-mono" style={{ fontSize: fs.label, color: PRIORITY_COLOR[r.priority] }}>{r.priority}</span>
             </div>
           </button>
           );
@@ -519,39 +528,36 @@ function CustomerPanel({ livePositions, requests }: { livePositions: { id: strin
 
       {/* Selected request detail */}
       {req && (
-        <div className="flex-1 overflow-y-auto px-4 py-3" style={{ scrollbarWidth: "none" }}>
-          <div className="mb-4">
+        <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none", padding: `${pad.y} ${pad.x}` }}>
+          <div className="mb-3">
             <div className="flex items-center justify-between mb-1">
-              <span className="font-semibold text-xl tracking-wide">{req.customer}</span>
-              <span className="font-mono text-xs px-2 py-0.5 border"
-                style={{ color: STATUS_COLOR[req.status], borderColor: `${STATUS_COLOR[req.status]}40` }}>
-                {req.status}
+              <span className="font-semibold tracking-wide" style={{ fontSize: fs.large }}>{req.customer}</span>
+              <span className="font-mono border" style={{ fontSize: fs.label, color: STATUS_COLOR[liveStatus(req)], borderColor: `${STATUS_COLOR[liveStatus(req)]}40`, padding: "2px 8px" }}>
+                {liveStatus(req)}
               </span>
             </div>
-            <Label className="text-[10px]">{req.id}</Label>
+            <span className="font-mono uppercase tracking-widest text-muted-foreground" style={{ fontSize: fs.label }}>{req.id}</span>
           </div>
 
           {/* Coordinates */}
-          <div className="mb-4 p-3 border border-border/50" style={{ background: "rgba(0,212,255,0.04)" }}>
-            <Label className="text-[10px] block mb-2">Target Illumination Coordinates</Label>
-            <div className="grid grid-cols-2 gap-3">
+          <div className="mb-3 border border-border/50" style={{ background: "rgba(0,212,255,0.04)", padding: `${pad.y} ${pad.x}` }}>
+            <span className="font-mono uppercase tracking-widest text-muted-foreground block mb-2" style={{ fontSize: fs.label }}>Target Illumination Coordinates</span>
+            <div className="grid grid-cols-2 gap-3 mb-2">
               <div>
-                <Label className="text-[10px] block mb-0.5">Latitude</Label>
-                <span className="font-mono text-xl text-primary">{req.lat.toFixed(1)}°{req.lat >= 0 ? "N" : "S"}</span>
+                <span className="font-mono uppercase tracking-widest text-muted-foreground block" style={{ fontSize: fs.label }}>Latitude</span>
+                <span className="font-mono text-primary" style={{ fontSize: fs.value }}>{req.lat.toFixed(1)}°{req.lat >= 0 ? "N" : "S"}</span>
               </div>
               <div>
-                <Label className="text-[10px] block mb-0.5">Longitude</Label>
-                <span className="font-mono text-xl text-primary">{Math.abs(req.lon).toFixed(1)}°{req.lon >= 0 ? "E" : "W"}</span>
+                <span className="font-mono uppercase tracking-widest text-muted-foreground block" style={{ fontSize: fs.label }}>Longitude</span>
+                <span className="font-mono text-primary" style={{ fontSize: fs.value }}>{Math.abs(req.lon).toFixed(1)}°{req.lon >= 0 ? "E" : "W"}</span>
               </div>
             </div>
-            <div className="mt-2">
-              <Label className="text-[10px] block mb-0.5">Region</Label>
-              <span className="font-semibold text-base tracking-wide">{req.region}</span>
-            </div>
+            <span className="font-mono uppercase tracking-widest text-muted-foreground block" style={{ fontSize: fs.label }}>Region</span>
+            <span className="font-semibold tracking-wide" style={{ fontSize: fs.value }}>{req.region}</span>
           </div>
 
           {/* Service details */}
-          <div className="space-y-0">
+          <div>
             {[
               { l: "Mission Type",       v: req.type                     },
               { l: "Priority",           v: req.priority, color: PRIORITY_COLOR[req.priority] },
@@ -559,33 +565,28 @@ function CustomerPanel({ livePositions, requests }: { livePositions: { id: strin
               { l: "Target Irradiance",  v: (req as any).flux            },
               { l: "Coverage Area",      v: `${(req as any).areakm2} km²`},
             ].map(({ l, v, color }) => (
-              <div key={l} className="flex items-center justify-between py-2 border-b border-border/30">
-                <Label className="text-[10px]">{l}</Label>
-                <span className="font-mono text-sm tracking-wide" style={{ color: color ?? "var(--foreground)" }}>{v}</span>
+              <div key={l} className="flex items-center justify-between border-b border-border/30" style={{ padding: `clamp(6px,1vh,12px) 0` }}>
+                <span className="font-mono uppercase tracking-widest text-muted-foreground" style={{ fontSize: fs.label }}>{l}</span>
+                <span className="font-mono tracking-wide" style={{ fontSize: fs.value, color: color ?? "var(--foreground)" }}>{v}</span>
               </div>
             ))}
           </div>
 
           {/* Next pass */}
-          <div className="mt-4 p-3 border border-border/50">
-            <Label className="text-[10px] block mb-2">Next Satellite Pass</Label>
+          <div className="mt-3 border border-border/50" style={{ padding: `${pad.y} ${pad.x}` }}>
+            <span className="font-mono uppercase tracking-widest text-muted-foreground block mb-2" style={{ fontSize: fs.label }}>Next Satellite Pass</span>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-[10px] block mb-0.5">AOS</Label>
-                <span className="font-mono text-base text-primary">+{(Math.abs(req.lat) / 10 + 4).toFixed(0)}m 12s</span>
-              </div>
-              <div>
-                <Label className="text-[10px] block mb-0.5">LOS</Label>
-                <span className="font-mono text-base text-primary">+{(Math.abs(req.lat) / 10 + 12).toFixed(0)}m 48s</span>
-              </div>
-              <div>
-                <Label className="text-[10px] block mb-0.5">Max Elevation</Label>
-                <span className="font-mono text-base text-primary">{(20 + Math.abs(req.lat) % 55).toFixed(1)}°</span>
-              </div>
-              <div>
-                <Label className="text-[10px] block mb-0.5">Satellite</Label>
-                <span className="font-mono text-base text-[#00D4FF]">SAT-001</span>
-              </div>
+              {[
+                ["AOS",   `+${(Math.abs(req.lat) / 10 + 4).toFixed(0)}m 12s`,  "var(--color-primary)"],
+                ["LOS",   `+${(Math.abs(req.lat) / 10 + 12).toFixed(0)}m 48s`, "var(--color-primary)"],
+                ["Max El",`${(20 + Math.abs(req.lat) % 55).toFixed(1)}°`,       "var(--color-primary)"],
+                ["Sat",   "Earendil 1",                                           "#00D4FF"],
+              ].map(([label, val, col]) => (
+                <div key={label}>
+                  <span className="font-mono uppercase tracking-widest text-muted-foreground block" style={{ fontSize: fs.label }}>{label}</span>
+                  <span className="font-mono" style={{ fontSize: fs.value, color: col }}>{val}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -637,16 +638,16 @@ export default function App() {
 
   return (
     <div className="w-screen h-screen bg-background text-foreground overflow-hidden flex flex-col"
-      style={{ fontFamily: "'Barlow Condensed', sans-serif", paddingLeft: 300, paddingRight: 300 }}>
+      style={{ fontFamily: "'Barlow Condensed', sans-serif", paddingLeft: "clamp(8px, 4vw, 240px)", paddingRight: "clamp(8px, 4vw, 240px)" }}>
 
       {/* Header — 300px, full width, logo fills it */}
       <header className="flex-none w-full flex items-center justify-center relative"
-        style={{ height: 300, marginBottom: -440, zIndex: 10, background: "rgba(5,7,10,0)" }}>
-        <img src={logoSvg} alt="Reflect Orbital" style={{ height: 300, width: "auto", display: "block" }} />
+        style={{ height: "clamp(80px, 14vw, 240px)", marginBottom: "clamp(-60px, -10vw, -180px)", zIndex: 10, background: "rgba(5,7,10,0)" }}>
+        <img src={logoSvg} alt="Reflect Orbital" style={{ height: "clamp(40px, 10vw, 200px)", width: "auto", maxWidth: "80vw", display: "block" }} />
       </header>
 
       {/* Main grid */}
-      <div className="flex-1 grid overflow-hidden" style={{ gridTemplateColumns: "480px 1fr 480px" }}>
+      <div className="flex-1 grid overflow-hidden" style={{ gridTemplateColumns: "clamp(140px, 18vw, 380px) 1fr clamp(140px, 18vw, 380px)" }}>
 
         {/* Left: both sat panels */}
         <SatSidebar livePositions={livePositions} />
@@ -668,7 +669,7 @@ export default function App() {
         </main>
 
         {/* Right: customer service requests */}
-        <aside className="border-l border-border flex flex-col overflow-hidden" style={{ paddingTop: 300 }}>
+        <aside className="border-l border-border flex flex-col overflow-hidden" style={{ paddingTop: "clamp(60px, 12vw, 220px)" }}>
           <div className="flex-1 overflow-hidden flex flex-col min-h-0">
             <CustomerPanel livePositions={livePositions} requests={activeRequests} />
           </div>
@@ -677,7 +678,7 @@ export default function App() {
 
       {/* Footer — three large clocks */}
       <footer className="border-t border-border flex items-center justify-center gap-20"
-        style={{ position: "fixed", bottom: 0, left: 300, right: 300, zIndex: 20, background: "rgba(6,10,14,0.98)", minHeight: 420 }}>
+        style={{ position: "fixed", bottom: 0, left: "clamp(8px, 4vw, 240px)", right: "clamp(8px, 4vw, 240px)", zIndex: 20, background: "rgba(6,10,14,0.98)", minHeight: "clamp(100px, 20vh, 380px)" }}>
         <LocalClock />
         <GmtClock />
         <LaunchCountdown />
