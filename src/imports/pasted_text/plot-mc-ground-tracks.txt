@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+"""
+Plot ground tracks for all runs in an MC scenario output directory.
+
+Usage:
+    python plot_mc_ground_tracks.py <path/to/MC_output_dir> [--altitude KM] [--elevation DEG]
+
+Example:
+    python plot_mc_ground_tracks.py scenarios/first_comms/output/MC_First_Comms_Nadir
+    python plot_mc_ground_tracks.py scenarios/first_comms/output/MC_First_Comms_Nadir --altitude 530 --elevation 5
+"""
+
+import sys
+import glob
+import argparse
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import cartopy.mpl.ticker as mticker
+
+
+GROUND_STATIONS = {
+    'Awarua':      (-46.50,  168.35),
+    'PuntaArenas': (-52.94,  -70.87),
+    'Blondous':    ( 65.65,  -20.25),
+    'Pretoria':    (-25.86,   28.45),
+    'Deadhorse':   ( 70.21, -148.41),
+    'Pitea':       ( 65.34,   21.43),
+    'Absheron':    ( 40.47,   49.49),
+    'Kandy':       (  7.27,   80.72),
+    'Nangetty':    (-29.01,  115.34),
+    'Umea':        ( 63.83,   20.26),
+    'Fairbanks':   ( 64.82, -147.72),
+    'Torrance':    ( 33.8075, -118.35),
+}
+
+# Subset with S-band antennas (Deadhorse, ElSegundo, Umea are UHF/X-band only)
+SBAND_STATIONS = {'Awarua', 'PuntaArenas', 'Blondous', 'Pretoria', 'Pitea',
+                  'Absheron', 'Kandy', 'Nangetty', 'Fairbanks', 'Torrance'}
+
+
+def visibility_circle(lat0_deg, lon0_deg, alt_km, el_min_deg=5, n_pts=360):
+    """Return (lats, lons) of the visibility footprint around a ground station.
+
+    Uses the standard elevation/nadir/Earth-central-angle triangle:
+        sin(eta) = R_E * cos(el) / (R_E + h)
+        rho = 90° - el - eta
+    """
+    R_E = 6371.0
+    lat0 = np.radians(lat0_deg)
+    lon0 = np.radians(lon0_deg)
+    el   = np.radians(el_min_deg)
+
+    eta = np.arcsin(R_E * np.cos(el) / (R_E + alt_km))
+    rho = np.pi / 2 - el - eta  # Earth central angle (half-cone)
+
+    bearings = np.linspace(0, 2 * np.pi, n_pts)
+    lat = np.arcsin(np.sin(lat0) * np.cos(rho) +
+                    np.cos(lat0) * np.sin(rho) * np.cos(bearings))
+    lon = lon0 + np.arctan2(np.sin(bearings) * np.sin(rho) * np.cos(lat0),
+                             np.cos(rho) - np.sin(lat0) * np.sin(lat))
+
+    lats = np.degrees(lat)
+    lons = np.degrees(lon)
+    # wrap to [-180, 180]
+    lons = (lons + 180) % 360 - 180
+    return lats, lons
+
+
+
+def plot_segments(ax, lon, lat, **kwargs):
+    """Plot a lat/lon polyline, splitting at ±180° wrap-arounds."""
+    jumps = np.where(np.abs(np.diff(lon)) > 300)[0]
+    for lon_seg, lat_seg in zip(np.split(lon, jumps + 1), np.split(lat, jumps + 1)):
+        if len(lon_seg) > 1:
+            ax.plot(lon_seg, lat_seg, transform=ccrs.PlateCarree(), **kwargs)
+
+
+def plot_ground_tracks(mc_dir, alt_km=530, el_min_deg=5):
+
+
+    fig = plt.figure(figsize=(18, 9))
+    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+
+    ax.add_feature(cfeature.LAND,      facecolor="#2d2d2d", edgecolor="#666666")
+    ax.add_feature(cfeature.OCEAN,     facecolor="#1e1e1e")
+    ax.add_feature(cfeature.COASTLINE, edgecolor="#4cc9f0", linewidth=0.8)
+    ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())
+
+    gl = ax.gridlines(draw_labels=True, x_inline=False, y_inline=False,
+                      linewidth=0.4, color="gray", alpha=0.5, linestyle="--")
+    gl.top_labels = False
+    gl.right_labels = False
+    gl.xlabel_style = {"size": 8, "color": "white"}
+    gl.ylabel_style = {"size": 8, "color": "white"}
+    gl.xlocator = mticker.LongitudeLocator(nbins=12)
+    gl.ylocator = mticker.LatitudeLocator(nbins=7)
+    gl.xformatter = mticker.LongitudeFormatter()
+    gl.yformatter = mticker.LatitudeFormatter()
+
+
+    # Ground stations: star + visibility circle
+    for name, (gs_lat, gs_lon) in GROUND_STATIONS.items():
+        ax.plot(gs_lon, gs_lat, '*', markersize=10, color='gold', alpha=0.9,
+                markeredgecolor='black', markeredgewidth=0.4,
+                transform=ccrs.PlateCarree(), zorder=5)
+        ax.annotate(name, (gs_lon, gs_lat), xytext=(5, 5),
+                    textcoords='offset points', fontsize=7,
+                    color='gold', alpha=0.9, transform=ccrs.PlateCarree())
+
+        if name in SBAND_STATIONS:
+            circ_lat, circ_lon = visibility_circle(gs_lat, gs_lon, alt_km, el_min_deg)
+            plot_segments(ax, circ_lon, circ_lat,
+                          color='gold', linewidth=0.7, alpha=0.4, linestyle='--')
+
+
+    ax.legend(loc='lower left', fontsize=9,
+              facecolor='#2d2d2d', labelcolor='white', edgecolor='#666666')
+
+    fig.patch.set_facecolor('#1e1e1e')
+    plt.tight_layout()
+    plt.show()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("mc_dir", help="Path to MC output directory (contains rec_tlm/)")
+    parser.add_argument("--altitude",  type=float, default=530,
+                        help="Satellite altitude in km for visibility circles (default: 530)")
+    parser.add_argument("--elevation", type=float, default=5,
+                        help="Minimum elevation angle in degrees (default: 5)")
+    args = parser.parse_args()
+    plot_ground_tracks(args.mc_dir, alt_km=args.altitude, el_min_deg=args.elevation)
+
+
+if __name__ == "__main__":
+    main()
